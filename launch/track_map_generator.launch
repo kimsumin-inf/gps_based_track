@@ -1,0 +1,8 @@
+<launch>
+  <node name="track_map_generate" pkg="track_map_generate" type="track_map_generate" output="screen" >
+    <param name="path" value="/home/sumin/catkin_ws/src/track_map_generate/path/path.txt" type="string"/>
+
+    
+  </node>
+  
+</launch>
