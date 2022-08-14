@@ -33,7 +33,7 @@ class Track_Map_Generate:
         #
         # member variation
         #
-        self.path_dir ="/home/sumin/catkin_ws/src/track_map_generate/path/path.txt"
+        self.path_dir ="/home/sumin/catkin_ws/src/track_map_generate/path/"
         self.path_state = False
 
         self.utm_x =0
@@ -49,17 +49,20 @@ class Track_Map_Generate:
 
         self.vel= 0
         self.steer =0 
-        self.utm_list = []
+        self.utm_x_list = []
+        self.utm_y_list = []
         self.interval = 0.5
         self.now_distance = 0
         self.prev_distance  = 0
         self.distance = 0
         self.cnt = 0
         self.frame = np.zeros((500,700),np.uint8)
+        self.frame = cv2.cvtColor(self.frame,cv2.COLOR_GRAY2BGR)
         self.rising  =False
         self.falling  = False
         self.re_rising = False 
         self.rotation = 0
+        self.straight= True
         #
         # member function
         #
@@ -71,6 +74,7 @@ class Track_Map_Generate:
         
 
     def gpsCB(self, data):
+        os.system("clear")
         msg = Bool()
         msg.data = self.path_state
         self.path_true.publish(msg)
@@ -86,12 +90,14 @@ class Track_Map_Generate:
             self.prev_x, self.prev_y = self.utm_x , self.utm_y 
             self.now_distance = get_distance((self.init_x,self.init_y),(self.utm_x, self.utm_y))
             self.prev_distance = 0 
-            self.utm_list.append(f"{self.init_x} {self.init_y}\n")
+            self.utm_x_list.append(f"{self.init_x}\n")
+            self.utm_y_list.append(f"{self.init_y}\n")
             self.path_exist()
             self.init =False
             rospy.loginfo("Initialize")
         
         else :
+
             if self.now_distance >self.interval:
                 self.rising = True
                 self.re_rising =False
@@ -104,11 +110,17 @@ class Track_Map_Generate:
                 self.cnt+=1
 
             self.frame = cv2.line(self.frame, (0,398),(700,398),(255,255,255),1,cv2.LINE_AA )
-            rospy.loginfo(f"rising : {self.rising}, falling: {self.falling}, re_rising: {self.re_rising}, count: {self.rotation}, distance: {self.now_distance}")
-            rospy.loginfo(f"steer: {self.steer}")
+            
             self.now_distance = get_distance((self.init_x,self.init_y),(self.utm_x, self.utm_y))
             if self.rising == True:
-                self.distance = get_distance((self.utm_x, self.utm_y), (self.prev_x, self.prev_y) )
+                
+                self.distance = get_distance((self.utm_x, self.utm_y), (self.prev_x, self.prev_y))
+                if abs(self.steer)>10:
+                    self.straight =False
+                    self.frame = cv2.circle(self.frame, (self.cnt,400-10*round(self.now_distance)),2,(0,0,255),1,cv2.LINE_AA )
+                else :
+                    self.straight = True
+                    self.frame = cv2.circle(self.frame, (self.cnt,400-10*round(self.now_distance)),2,(255,0,0),1,cv2.LINE_AA )
                 
                 if  self.distance >= self.interval:
                     self.frame = cv2.circle(self.frame, (self.cnt,400-10*round(self.now_distance)),2,(255,255,255),1,cv2.LINE_AA )
@@ -118,16 +130,18 @@ class Track_Map_Generate:
                     rospy.loginfo(f"distance: {self.now_distance}")
                     self.prev_distance = self.now_distance
                     self.prev_x, self.prev_y = self.utm_x , self.utm_y
-
-                    self.utm_list.append(f"{self.utm_x} {self.utm_y}\n")
+                    self.utm_x_list.append(f"{self.utm_x}\n")
+                    self.utm_y_list.append(f"{self.utm_y}\n")
                     cv2.imshow("frame", self.frame)
                     cv2.waitKey(1)
 
-
+            
                 if  self.rising == True and self.falling == True and self.re_rising==False and self.path_state == False:
-                    rospy.loginfo("Map Generate")
-                    with open(self.path_dir, "a") as f:
-                        f.writelines(self.utm_list)
+                    rospy.loginfo("Map Generated")
+                    with open(self.path_dir+"utm_x.txt", "a") as f:
+                        f.writelines(self.utm_x_list)
+                    with open(self.path_dir+"utm_y.txt", "a") as f:
+                        f.writelines(self.utm_y_list)
                     self.path_state = True
                 
                 if  self.rising == True and self.falling == True and self.re_rising==True :
@@ -137,6 +151,13 @@ class Track_Map_Generate:
                     self.rising = False
                     self.falling = False
                     self.re_rising = False
+                if self.path_state==True:
+                    rospy.loginfo("Map Generated")
+                elif self.path_state ==False:
+                    rospy.loginfo("Map Generating")
+            rospy.loginfo(f"rising : {self.rising}, falling: {self.falling}, re_rising: {self.re_rising}")
+            rospy.loginfo(f"count: {self.rotation}, distance: {self.now_distance}")
+            rospy.loginfo(f"steer: {self.steer}, steer state: {self.straight}")
             
             
 
@@ -149,8 +170,9 @@ class Track_Map_Generate:
 
     def path_exist(self):
         msg = Bool()
-        if os.path.isfile(self.path_dir):
-            os.remove(self.path_dir)
+        if os.path.isfile(self.path_dir+"utm_x.txt") and os.path.isfile(self.path_dir+"utm_y.txt") :
+            os.remove(self.path_dir+"utm_x.txt")
+            os.remove(self.path_dir+"utm_y.txt")
             msg.data = False
             self.path_true.publish(msg)
         else :
