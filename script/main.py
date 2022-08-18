@@ -113,7 +113,7 @@ class Track_Map_Generate:
             
             self.now_distance = get_distance((self.init_x,self.init_y),(self.utm_x, self.utm_y))
             if self.rising == True:
-                
+                rospy.loginfo("Map Generating")
                 self.distance = get_distance((self.utm_x, self.utm_y), (self.prev_x, self.prev_y))
                 if abs(self.steer)>10:
                     self.straight =False
@@ -154,7 +154,7 @@ class Track_Map_Generate:
                 if self.path_state==True:
                     rospy.loginfo("Map Generated")
                 elif self.path_state ==False:
-                    rospy.loginfo("Map Generating")
+                    rosy
             rospy.loginfo(f"rising : {self.rising}, falling: {self.falling}, re_rising: {self.re_rising}")
             rospy.loginfo(f"count: {self.rotation}, distance: {self.now_distance}")
             rospy.loginfo(f"steer: {self.steer}, steer state: {self.straight}")
