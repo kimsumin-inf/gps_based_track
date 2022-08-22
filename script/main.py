@@ -154,7 +154,7 @@ class Track_Map_Generate:
                 if self.path_state==True:
                     rospy.loginfo("Map Generated")
                 elif self.path_state ==False:
-                    rosy
+                    rospy.loginfo("Map Generating")
             rospy.loginfo(f"rising : {self.rising}, falling: {self.falling}, re_rising: {self.re_rising}")
             rospy.loginfo(f"count: {self.rotation}, distance: {self.now_distance}")
             rospy.loginfo(f"steer: {self.steer}, steer state: {self.straight}")
