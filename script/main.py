@@ -90,8 +90,8 @@ class Track_Map_Generate:
             self.prev_x, self.prev_y = self.utm_x , self.utm_y 
             self.now_distance = get_distance((self.init_x,self.init_y),(self.utm_x, self.utm_y))
             self.prev_distance = 0 
-            self.utm_x_list.append(f"{self.init_x}\n")
-            self.utm_y_list.append(f"{self.init_y}\n")
+            self.utm_x_list.append(self.init_x)
+            self.utm_y_list.append(self.init_y)
             self.path_exist()
             self.init =False
             rospy.loginfo("Initialize")
@@ -130,14 +130,26 @@ class Track_Map_Generate:
                     rospy.loginfo(f"distance: {self.now_distance}")
                     self.prev_distance = self.now_distance
                     self.prev_x, self.prev_y = self.utm_x , self.utm_y
-                    self.utm_x_list.append(f"{self.utm_x}\n")
-                    self.utm_y_list.append(f"{self.utm_y}\n")
+                    self.utm_x_list.append(self.utm_x)
+                    self.utm_y_list.append(self.utm_y)
                     cv2.imshow("frame", self.frame)
                     cv2.waitKey(1)
 
             
                 if  self.rising == True and self.falling == True and self.re_rising==False and self.path_state == False:
                     rospy.loginfo("Map Generated")
+                    self.utm_x_list.append(self.utm_x_list[0])
+                    self.utm_y_list.append(self.utm_y_list[0])
+                    self.utm_x_list[-2] = (self.utm_x_list[-3]+self.utm_x_list[-1])/2
+                    self.utm_y_list[-2] = (self.utm_y_list[-3]+self.utm_y_list[-1])/2
+                    self.utm_x_list[-3] = (self.utm_x_list[-4]+self.utm_x_list[-2])/2
+                    self.utm_y_list[-3] = (self.utm_y_list[-4]+self.utm_y_list[-2])/2
+                    for i in range(len(self.utm_x_list)-1):
+                        self.utm_x_list[i] = f"{self.utm_x_list[i]}\n"
+                        self.utm_y_list[i] = f"{self.utm_y_list[i]}\n"
+                    self.utm_x_list[-1] = f"{self.utm_x_list[-1]}"
+                    self.utm_y_list[-1] = f"{self.utm_y_list[-1]}"
+                    
                     with open(self.path_dir+"utm_x.txt", "a") as f:
                         f.writelines(self.utm_x_list)
                     with open(self.path_dir+"utm_y.txt", "a") as f:
